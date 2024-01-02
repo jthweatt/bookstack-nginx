@@ -172,36 +172,36 @@ function run_configure_ngnix() {
   PHP_VERSION = $(php -r "echo substr(phpversion(),0,3);")
 
   # Set-up the required BookStack nginx config
-  cat >/etc/ngnix/sites-available/bookstack.conf <<EOL
-  server {
-  listen 80;
-  listen [::]:80;
+  cat >/etc/nginx/sites-available/bookstack.conf <<EOL
+server {
+    listen 80;
+    listen [::]:80;
 
-  server_name ${DOMAIN};
+    server_name ${DOMAIN};
 
-  root /var/www/bookstack/public;
-  index index.php index.html;
+    root /var/www/bookstack/public;
+    index index.php index.html;
 
-  client_max_body_size 100m;
-  client_body_timeout 120s; # Default is 60, May need to be increased for very large uploads
+    client_max_body_size 100m;
+    client_body_timeout 120s; # Default is 60, May need to be increased for very large uploads
 
-  location / {
-    try_files $uri $uri/ /index.php?$query_string;
-  }
-  
-  location ~ \.php$ {
-    include snippets/fastcgi-php.conf;
-    fastcgi_pass unix:/run/php/php$PHP_VERSION-fpm.sock;
-  }
+    location / {
+      try_files $uri $uri/ /index.php?$query_string;
+    }
+    
+    location ~ \.php$ {
+      include snippets/fastcgi-php.conf;
+      fastcgi_pass unix:/run/php/php$PHP_VERSION-fpm.sock;
+    }
 }
 EOL
+    # Disable the default nginx site and enable BookStack
+    sudo rm /etc/nginx/sites-enabled/default
+    sudo ln -s /etc/nginx/sites-available/bookstack.conf /etc/nginx/sites-enabled/bookstack
 
-# Disable the default nginx site and enable BookStack
-sudo rm /etc/nginx/sites-enabled/default
-sudo ln -s /etc/nginx/sites-available/bookstack.conf /etc/nginx/sites-enabled/bookstack
-
-# Restart ngnix to load new config
-systemctl restart nginx.service
+    # Restart ngnix to load new config
+    systemctl restart nginx.service
+}
 
 info_msg "This script logs full output to $LOGPATH which may help upon issues."
 sleep 1
