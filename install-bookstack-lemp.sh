@@ -169,10 +169,10 @@ function run_configure_ngnix() {
   # Enable required nignix modules (future)
 
   # Get php-fpm version
-  PHP_VERSION = $(php -r "echo substr(phpversion(),0,3);")
+  PHP_VERSION=$(php -r "echo substr(phpversion(),0,3);")
 
   # Set-up the required BookStack nginx config
-  cat >/etc/nginx/sites-available/bookstack.conf <<EOL
+  cat >/etc/nginx/sites-available/bookstack <<EOL
 server {
     listen 80;
     listen [::]:80;
@@ -181,6 +181,9 @@ server {
 
     root /var/www/bookstack/public;
     index index.php index.html;
+
+    #Disable NGINX current version reporting on error pages
+    server_tokens off;
 
     client_max_body_size 100m;
     client_body_timeout 120s; # Default is 60, May need to be increased for very large uploads
@@ -196,8 +199,8 @@ server {
 }
 EOL
     # Disable the default nginx site and enable BookStack
-    sudo rm /etc/nginx/sites-enabled/default
-    sudo ln -s /etc/nginx/sites-available/bookstack.conf /etc/nginx/sites-enabled/bookstack
+    unlink /etc/nginx/sites-enabled/default
+    ln -s /etc/nginx/sites-available/bookstack /etc/nginx/sites-enabled/bookstack
 
     # Restart ngnix to load new config
     systemctl restart nginx.service
