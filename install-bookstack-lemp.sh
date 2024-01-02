@@ -165,7 +165,7 @@ function run_set_application_file_permissions() {
 }
 
 # Setup nginx with the needed modules and config
-function run_configure_ngnix() {
+function run_configure_nginx() {
   # Enable required nignix modules (future)
 
   # Get php-fpm version
@@ -174,28 +174,42 @@ function run_configure_ngnix() {
   # Set-up the required BookStack nginx config
   cat >/etc/nginx/sites-available/bookstack <<EOL
 server {
-    listen 80;
-    listen [::]:80;
+  #This config is for HTTPS setup
+  #listen 443 ssl;
+  #server_name your_servers_name.domain.com;
 
-    server_name ${DOMAIN};
+  #This config is for HTTP setup
+  listen 80;
+  server_name $DOMAIN;
 
-    root /var/www/bookstack/public;
-    index index.php index.html;
+  #SSL Cert Location
+  #ssl_certificate /etc/ssl/certs/self-sign-SSL-or-public-ssl.crt;
+  #ssl_certificate_key /etc/ssl/private/self-sign-SSL-or-public-ssl.key;
 
-    #Disable NGINX current version reporting on error pages
-    server_tokens off;
+  #Disable NGINX current version reporting on error pages
+  server_tokens off;
 
-    client_max_body_size 100m;
-    client_body_timeout 120s; # Default is 60, May need to be increased for very large uploads
+  #Force strong TLS
+  #ssl_protocols      TLSv1.3;
+  #ssl_prefer_server_ciphers   on;
 
-    location / {
-      try_files $uri $uri/ /index.php?$query_string;
-    }
-    
-    location ~ \.php$ {
-      include snippets/fastcgi-php.conf;
-      fastcgi_pass unix:/run/php/php$PHP_VERSION-fpm.sock;
-    }
+  #Disable weak ciphers
+  #ssl_ciphers "EECDH+ECDSA+AESGCM EECDH+aRSA+AESGCM EECDH+ECDSA+SHA384 EECDH+ECDSA+SHA256 EECDH+aRSA+SHA384 EECDH+>
+
+  #Increase Upload Size
+  client_max_body_size 12M;
+
+  root /var/www/bookstack/public;
+  index index.php index.html;
+
+  location / {
+    try_files \$uri \$uri/ /index.php?\$query_string;
+  }
+
+  location ~ \.php$ {
+    include snippets/fastcgi-php.conf;
+    fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+  }
 }
 EOL
     # Disable the default nginx site and enable BookStack
@@ -240,8 +254,8 @@ run_bookstack_database_migrations >> "$LOGPATH" 2>&1
 info_msg "[8/9] Setting BookStack file & folder permissions..."
 run_set_application_file_permissions >> "$LOGPATH" 2>&1
 
-info_msg "[9/9] Configuring ngnix server..."
-run_configure_ngnix >> "$LOGPATH" 2>&1
+info_msg "[9/9] Configuring Nginx server..."
+run_configure_nginx >> "$LOGPATH" 2>&1
 
 info_msg "----------------------------------------------------------------"
 info_msg "Setup finished, your BookStack instance should now be installed!"
