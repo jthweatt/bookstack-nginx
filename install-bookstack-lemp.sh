@@ -197,7 +197,8 @@ function run_configure_ngnix() {
 EOL
 
 # Disable the default nginx site and enable BookStack
-
+sudo rm /etc/nginx/sites-enabled/default
+sudo ln -s /etc/nginx/sites-available/bookstack.conf /etc/nginx/sites-enabled/bookstack
 
 # Restart ngnix to load new config
 systemctl restart nginx.service
